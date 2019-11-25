@@ -1,0 +1,12 @@
+{{ jquery_cdn }}
+{{ jquery_ui_cdn }}
+{{ jquery_ui_css_cdn}}
+{{ echarts_cdn }}
+
+<link href="{{ url_for("_dataview.echarts_css") }}" rel="stylesheet" />
+<script src="{{ url_for("_dataview.echarts_javascript") }}"></script>
+
+<input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+
+<div id="mydivid" style="height: 400px;"></div>
+{{ chart.render("mydivid") }}

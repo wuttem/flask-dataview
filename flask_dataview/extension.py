@@ -1,0 +1,115 @@
+#!/usr/bin/python
+# coding: utf8
+
+import logging
+import os
+import json
+
+from flask import Blueprint, Response, Markup, render_template_string, send_file, make_response
+from flask import current_app, _app_ctx_stack
+
+
+from .helper import main_dir, lib_dir, template_dir, render_environment
+
+logger = logging.getLogger(__name__)
+view_bp = Blueprint("_dataview", __name__, url_prefix='/_dataview')
+
+
+from .models import BaseChart
+
+
+def json_filter():
+    def my_json(s):
+        return Markup(json.dumps(s))
+    def my_ppjson(s):
+        return Markup(json.dumps(s, indent=4, sort_keys=True))
+    return {"json": my_json, "ppjson": my_ppjson}
+
+
+def add_echarts_javascript(html_str):
+    js = g.get("echarts_js", None)
+    if js is None:
+        g.echarts_js = list()
+    g.echarts_js.append(html_str)
+    g.echarts_js = list(set(g.add_js))
+
+
+def echarts_javascript_context():
+    def my_javascript():
+        js = g.get("echarts_js", None)
+        if js is None:
+            return Markup("")
+        return Markup("\n".join(js))
+    return {"echarts_javascript": my_javascript}
+
+
+def cdn_tags_context():
+    jquery = Markup('<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>')
+    jquery_ui = Markup('<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>')
+    jquery_ui_css = Markup('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.min.css" integrity="sha256-sEGfrwMkIjbgTBwGLVK38BG/XwIiNC/EAG9Rzsfda6A=" crossorigin="anonymous" />')
+    echarts = Markup('<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.3.0/echarts-en.min.js" integrity="sha256-0BLhrT+xIfvJO+8OfHf8iWMDzUmoL+lXNyswCl7ZUlY=" crossorigin="anonymous"></script>')
+    return {"jquery_cdn": jquery, "jquery_ui_cdn": jquery_ui, "jquery_ui_css_cdn": jquery_ui_css, "echarts_cdn": echarts}
+
+
+class FlaskDataViews(object):
+    def __init__(self, app=None, theme=None):
+        self.app = app
+        self.default_theme = theme
+        if app is not None:
+            self.init_app(app)
+
+    def init_app(self, app):
+        app.config.setdefault('USE_CDN', False)
+        app.config.setdefault('ECHARTS_THEME', self.default_theme)
+        self.theme = app.config["ECHARTS_THEME"]
+        # add routes
+        app.register_blueprint(view_bp)
+
+        # add filters
+        for n, func in json_filter().items():
+            app.jinja_env.filters[n] = func
+            render_environment.filters[n] = func
+        app.context_processor(echarts_javascript_context)
+        app.context_processor(cdn_tags_context)
+
+        # add teardown
+        app.teardown_appcontext(self.teardown)
+
+    def teardown(self, exception):
+        ctx = _app_ctx_stack.top
+        # do somthing on teardown ...
+
+    def linechart(self, *args, **kwargs):
+        if "theme" not in kwargs:
+            return BaseChart(*args, theme=self.theme, **kwargs)
+        return BaseChart(*args, **kwargs)
+
+
+@view_bp.route('/echarts.min.js')
+def echarts_lib_min():
+    return send_file(os.path.join(lib_dir, "echarts", "js", "echarts.min.js"), mimetype='text/javascript')
+
+@view_bp.route('/echarts.widget.js')
+def echarts_widget():
+    return send_file(os.path.join(lib_dir, "echarts", "js", "echarts.widget.js"), mimetype='text/javascript')
+
+@view_bp.route('/slider.min.js')
+def slider_lib_min():
+    return send_file(os.path.join(lib_dir, "slider", "js", "jQDateRangeSlider.min.js"), mimetype='text/javascript')
+
+@view_bp.route('/echarts.css')
+def echarts_css():
+    return send_file(os.path.join(lib_dir, "slider", "css", "style.css"), mimetype='text/css')
+
+@view_bp.route('/icons-classic/<imagename>.png')
+def slider_img(imagename):
+    return send_file(os.path.join(lib_dir, "slider", "css", "icons-classic", "{}.png".format(imagename)))
+
+@view_bp.route('/flask_echarts.js')
+def echarts_javascript():
+    with open(os.path.join(lib_dir, "slider", "js", "jQDateRangeSlider.min.js"), 'r') as j_file1:
+        with open(os.path.join(lib_dir, "echarts", "js", "echarts.widget.js"), 'r') as j_file2:
+            full_js = j_file1.read() + "\n" + j_file2.read()
+            response = make_response(full_js)
+            response.headers.set('Content-Type', 'text/javascript')
+            return response
