@@ -34,18 +34,32 @@ $.widget( "custom.etimeseries", {
     },
 
     open_settings: function() {
-      this.options.dialog.empty();
+      var body = this.options.dialog.find('.modal-body')
+      body.empty();
       var content = jQuery('<div/>');
+      var tab = jQuery('<table/>').addClass('table table-striped');
+      var head = jQuery('<tr/>');
+      head.append(jQuery('<th/>', {"text": "Show", "style": "width: 50px;"}));
+      head.append(jQuery('<th/>', {"text": "Series"}));
+      // head.append(jQuery('<th/>', {"text": "Color"}));
+      tab.append(jQuery('<thead/>').append(head));
       $.each(this.options.series_info, function( key, value ) {
-        var p = jQuery('<p/>')
-        var cb = jQuery('<input/>', {type: "checkbox", id: "cb_" + key, checked: value.active})
-        cb.data("key", key)
-        p.append(cb);
-        p.append(key);
-        content.append(p);
+        var tr = jQuery('<tr/>');
+        var td = jQuery('<td/>');
+        var cb = jQuery('<input/>', {type: "checkbox", id: "cb_" + key, checked: value.active});
+        cb.data("key", key);
+        td.append(cb);
+        tr.append(td);
+        tr.append("<td>" + key + "</td>");
+        // var color = jQuery('<input/>')[0];
+        // var picker = new jscolor(color)
+        // picker.fromHSV(360 / 100 * 10, 100, 100)
+        // tr.append(jQuery('<td/>').append(color));
+        tab.append(jQuery('<thead/>').append(tr));
       });
-      content.appendTo(this.options.dialog);
-      this.options.dialog.dialog("open");
+      content.append(tab);
+      body.append(content);
+      this.options.dialog.modal("show");
     },
 
     _save_dialog: function() {
@@ -54,10 +68,8 @@ $.widget( "custom.etimeseries", {
       var s = this.options.series_info;
       var r = this.options.data_range;
       d.find("input[type=checkbox]").each(function( index ) {
-        console.log( index + ": " + $( this ).data("key") );
         var k = $( this ).data("key");
         var v = $( this )[0].checked;
-        console.log($( this ));
         if (s[k].active != v)
         {
           changed = true;
@@ -68,7 +80,7 @@ $.widget( "custom.etimeseries", {
       if (changed) {
         setTimeout(this.load_data.bind(this, r[0], r[1], true), 10);
       }
-      d.dialog('close');
+      d.modal('hide');
     },
 
     reload: function() {
@@ -87,26 +99,25 @@ $.widget( "custom.etimeseries", {
       html += '<div class="modal-content">';
       html += '<div class="modal-header">';
       html += '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
-      html += '<h4 class="modal-title" id="myModalLabel">Modal title</h4>';
+      html += '<h4 class="modal-title" id="myModalLabel">Chart Settings</h4>';
       html += '</div>';
       html += '<div class="modal-body">';
-      html += 'hiiii';
+      html += 'fff';
       html += '</div>';
       html += '<div class="modal-footer">';
       html += '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
-      html += '<button type="button" class="btn btn-primary">Save changes</button>';
+      html += '<button type="button" class="btn btn-primary save-button">Save</button>';
       html += '</div>';
       html += '</div>';
       html += '</div>';
-      dialog.html(html)
-
-
-      dialog.dialog({
-        autoOpen: false,
-        buttons: {
-          "save": this._save_dialog.bind(this)
-        }
+      dialog.html(html);
+      var self = this;
+      dialog.find('.save-button').on("click", function(e){
+        e.preventDefault(); // prevent de default action
+        self._save_dialog();
+        //dialog.modal('hide');
       });
+      dialog.modal("hide");
       return dialog;
     },
 

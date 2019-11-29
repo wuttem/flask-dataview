@@ -103,8 +103,9 @@ def echarts_widget():
 @view_bp.route('/flask_dataview.js')
 def dataview_javascript():
     with open(os.path.join(lib_dir, "echarts", "js", "jquery.ui.widget.js"), 'r') as j_file1:
-        with open(os.path.join(lib_dir, "echarts", "js", "echarts.widget.js"), 'r') as j_file2:
-            full_js = j_file1.read() + "\n" + j_file2.read()
-            response = make_response(full_js)
-            response.headers.set('Content-Type', 'text/javascript')
-            return response
+        with open(os.path.join(lib_dir, "echarts", "js", "jscolor.js"), 'r') as j_file2:
+            with open(os.path.join(lib_dir, "echarts", "js", "echarts.widget.js"), 'r') as j_file3:
+                full_js = j_file1.read() + "\n" + j_file2.read() + "\n" + j_file3.read()
+                response = make_response(full_js)
+                response.headers.set('Content-Type', 'text/javascript')
+                return response
