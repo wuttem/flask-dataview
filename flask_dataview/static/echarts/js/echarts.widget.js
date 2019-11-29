@@ -14,12 +14,13 @@ $.widget( "custom.etimeseries", {
         theme: "default",
         data_url: null,
         show_series_select: true,
-        show_timeline: true,
-        range: null,
+        max_range: null,
+        default_range: null,
+        data_range: null,
         chart_div:null,
         chart: null,
-        timeline: null,
         dialog: null,
+        is_range_chart: false,
         id: "unknown"
     },
 
@@ -51,7 +52,7 @@ $.widget( "custom.etimeseries", {
       var d = this.options.dialog;
       var changed = false;
       var s = this.options.series_info;
-      var r = this.options.range;
+      var r = this.options.data_range;
       d.find("input[type=checkbox]").each(function( index ) {
         console.log( index + ": " + $( this ).data("key") );
         var k = $( this ).data("key");
@@ -71,7 +72,7 @@ $.widget( "custom.etimeseries", {
     },
 
     reload: function() {
-      var r = this.options.range;
+      var r = this.options.data_range;
       this.load_data(r[0], r[1], true);
     },
 
@@ -79,9 +80,27 @@ $.widget( "custom.etimeseries", {
       var dialog_id = uniqId();
       var dialog = jQuery('<div/>', {
         "id": dialog_id,
-        "class": 'etimeseries-dialog',
-        "style": "display: none;",
-        "title": "Settings"});
+        "class": 'modal fade echarts-dialog',
+        "role": "dialog",
+        "aria-labelledby": "myModalLabel"});
+      var html = '<div class="modal-dialog" role="document">';
+      html += '<div class="modal-content">';
+      html += '<div class="modal-header">';
+      html += '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+      html += '<h4 class="modal-title" id="myModalLabel">Modal title</h4>';
+      html += '</div>';
+      html += '<div class="modal-body">';
+      html += 'hiiii';
+      html += '</div>';
+      html += '<div class="modal-footer">';
+      html += '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+      html += '<button type="button" class="btn btn-primary">Save changes</button>';
+      html += '</div>';
+      html += '</div>';
+      html += '</div>';
+      dialog.html(html)
+
+
       dialog.dialog({
         autoOpen: false,
         buttons: {
@@ -94,7 +113,6 @@ $.widget( "custom.etimeseries", {
     _create: function() {
         var theme = this.options.theme;
         var show_series_select = this.options.show_series_select;
-        var show_timeline = this.options.show_timeline;
         var series_info = this.options.series_info;
         var l = this.options.limits;
 
@@ -108,35 +126,15 @@ $.widget( "custom.etimeseries", {
             "class": 'etimeseries-chart',
             "style": "width: 100%;"});
         chart_div.height(height);
-        var timeline_div = jQuery('<div/>', {
-            "id": uniqId(),
-            "class": 'etimeseries-timeline',
-            "style": "width: 90%; margin: auto;"});
 
-        var default_min = Date.parse(l.dt_max_iso) - (24*60*60*1000) * l.default_days;
-        var default_max = Date.parse(l.dt_max_iso);
-        this.options.range = [default_min, default_max];
-
-        timeline_div.dateRangeSlider({
-            bounds:{
-                min: Date.parse(l.dt_min_iso),
-                max: Date.parse(l.dt_max_iso)
-            },
-            defaultValues:{
-                min: this.options.range[0],
-                max: this.options.range[1]
-            },
-            range:{
-                min: {days: l.min_days},
-                max: {days: l.max_days}
-            }
-        });
+        var default_min = l.default_ts_min;
+        var default_max = l.default_ts_max;
+        this.options.max_range = [l.ts_min, l.ts_max];
+        this.options.default_range = [default_min, default_max];
+        this.options.data_range = [default_min, default_max];
+        this.options.is_range_chart = l.range_chart;
 
         chart_div.appendTo(this.element);
-        if (show_timeline) {
-            timeline_div.appendTo(this.element);
-            chart_div.height(height - timeline_div.height());
-        }
 
         var dialog_div = this._create_dialog();
         this.options.dialog = dialog_div;
@@ -154,12 +152,8 @@ $.widget( "custom.etimeseries", {
         // On Chart Reset
         chart.on('restore', this._handle_restore.bind(this));
 
-        // On Timeline Changed
-        timeline_div.on("userValuesChanged", this._handle_slider_move.bind(this));
-
         this.options.chart = chart;
         this.options.chart_div = chart_div;
-        this.options.timeline = timeline_div;
 
         $(window).on('resize', function(){
             chart.resize();
@@ -170,41 +164,32 @@ $.widget( "custom.etimeseries", {
     _handle_zoom: function (params) {
       var chart = this.options.chart;
       var axis = chart.getModel().option.xAxis[0];
-      var d1, d2 = null;
-      if (axis.rangeStart){
-        d1 = new Date(axis.rangeStart);
-      } else {
-        d1 = this.options.range[0];
+      var d1 = new Date(axis.rangeStart);
+      var d2 = new Date(axis.rangeEnd);
+
+      // check if we are in max_range
+      if (d1 < this.options.max_range[0]) {
+        d1 = this.options.max_range[0];
       }
-      if (axis.rangeEnd){
-        d2 = new Date(axis.rangeEnd);
-      } else {
-        d2 = this.options.range[1];
+      if (d2 > this.options.max_range[1]) {
+        d2 = this.options.max_range[1];
       }
-      this.options.timeline.dateRangeSlider("values", d1, d2);
-      console.log("zoom", params);
+
+      console.log("zoom", d1, d2);
+      if (d1 < this.options.data_range[0] ||
+          d2 > this.options.data_range[1])
+      {
+          this.load_data(d1, d2);
+      }
     },
 
     _handle_restore: function (params) {
       var chart = this.options.chart;
-      var axis = chart.getModel().option.xAxis[0];
-      var d1 = this.options.range[0];
-      var d2 = this.options.range[1];
-      this.options.timeline.dateRangeSlider("values", d1, d2);
-      console.log("restore");
-    },
-
-    _handle_slider_move: function(e, data) {
-      current_range = [data.values.min, data.values.max];
-      console.log("slider moved", data.values.min, data.values.max);
-      var start_day = data.values.min;
-      start_day.setHours(0,0,0,0);
-      var end_day = data.values.max;
-      end_day.setHours(23,59,59,999);
-      var min = timeAsUTCDate(start_day);
-      var max = timeAsUTCDate(end_day);
-      this.set_zoom(min, max, false);
-      // this.set_zoom(data.values.min, data.values.max, false);
+      // var axis = chart.getModel().option.xAxis[0];
+      var d1 = this.options.default_range[0];
+      var d2 = this.options.default_range[1];
+      console.log("restore", d1, d2);
+      this.load_data(d1, d2);
     },
 
     load_data: function(f, t, reload=false) {
@@ -214,8 +199,8 @@ $.widget( "custom.etimeseries", {
       //f_value.setHours(0,0,0,0);
       var t_value = new Date(t);
       //t_value.setHours(23,59,59,999);
-      var f_iso = f_value.toISOString().substring(0, 10);
-      var t_iso = t_value.toISOString().substring(0, 10);
+      var f_iso = f_value.toISOString()//.substring(0, 10);
+      var t_iso = t_value.toISOString()//.substring(0, 10);
       var req_url = this.options.data_url;
       var req_data = {from_date: f_iso, to_date: t_iso, action: "data",
                       chart_id: this.options.id, series: this.options.series_info,
@@ -238,53 +223,13 @@ $.widget( "custom.etimeseries", {
           } else {
             chart.setOption(opt);
           }
-          self.options.range[0] = f;
-          self.options.range[1] = t;
-          chart.dispatchAction({
-            type: 'dataZoom',
-            startValue: f_value.getTime(),
-            endValue: t_value.getTime()
-          });
+          self.options.data_range[0] = f;
+          self.options.data_range[1] = t;
           chart.hideLoading();
         },
         failure: function(errMsg) {
             alert(errMsg);
         }
       });
-      // $.getJSON(req_url, function( data ) {
-      //   var opt = {dataset: data};
-      //   chart.setOption(opt);
-      //   self.options.range[0] = f;
-      //   self.options.range[1] = t;
-      //   chart.dispatchAction({
-      //     type: 'dataZoom',
-      //     startValue: f_value.getTime(),
-      //     endValue: t_value.getTime()
-      //   });
-      //   chart.hideLoading();
-      // });
-    },
-
-    set_zoom: function(f, t, adjust_slider=true) {
-        var current_min = this.options.range[0];
-        var current_max = this.options.range[1];
-        var chart = this.options.chart;
-
-        if (f < current_min || t > current_max) {
-          // we need new data
-          this.load_data(f, t);
-          return;
-        }
-
-        // Move Chart
-        chart.dispatchAction({
-          type: 'dataZoom',
-          startValue: f,
-          endValue: t
-        });
-
-        if (adjust_slider) {
-          this.options.timeline.dateRangeSlider("values", f, t);
-        }
-    },
+    }
 });

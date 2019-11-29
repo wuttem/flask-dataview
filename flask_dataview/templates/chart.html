@@ -3,7 +3,7 @@ $( document ).ready(function() {
   $("#{{ div_id }}").etimeseries({
     id: "{{ chart_instance.ID }}",
     options: {% if chart_instance.initial_data %} {{ chart_instance.build_options(with_data=True) | json }} {% else %} {{ chart_instance.build_options(with_data=False) | json }} {% endif %},
-    limits: {{ chart_instance.get_limits() | json }},
+    limits: {{ chart_instance.get_range_information() | json }},
     data_url: "{{ chart_instance.get_url() | safe }}",
     {% if chart_instance.theme %}theme: "{{ chart_instance.theme }}",{% endif %}
     series_info: {{ chart_instance.get_series_info() | json }}

@@ -2,6 +2,7 @@
 # coding: utf8
 
 import os
+import collections.abc
 
 from jinja2 import Environment, FileSystemLoader, Markup
 
@@ -18,6 +19,16 @@ CDN_URLS = {
     "DATATABLES_JS": "https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js",
     "JQUERY": "https://code.jquery.com/jquery-3.4.1.min.js"
 }
+
+
+def update_mapping(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update_mapping(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+
 
 def render_template(template_name, **kwargs):
     t = render_environment.get_template(template_name)
