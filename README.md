@@ -68,3 +68,9 @@ Template HTML
 {{ chart.render("mydivid") }}
 
 ```
+
+## Build / Upload
+```
+python setup.py sdist
+twine upload dist/*
+```

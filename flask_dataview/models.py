@@ -6,7 +6,7 @@ import uuid
 
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
-from flask import request, jsonify
+from flask import request, jsonify, current_app
 
 from .helper import render_chart, update_mapping
 
@@ -44,7 +44,7 @@ class BaseChart(object):
         self._id = "{}.{}".format(self.__class__.__name__, id)
         self.dataset = DataSet(data=series, max_active_series=max_active_series)
         self.title = title
-        self.theme = theme
+        self._theme = theme
         self.render_function = render_chart
         self._default_days = default_days
         self._min_days = min_days
@@ -57,6 +57,15 @@ class BaseChart(object):
     @property
     def ID(self):
         return self._id
+
+    @property
+    def theme(self):
+        if self._theme is not None:
+            return self._theme
+        if current_app:
+            if "dataview" in current_app.extensions:
+                return current_app.extensions['dataview'].theme
+        return None
 
     def is_post_request(self):
         if request.method == "POST":
@@ -343,7 +352,7 @@ class DataSet():
         if self._data_cache is None:
             series_count = len(self.active_series)
             series_names = []
-            o = defaultdict(lambda: [0] * series_count)
+            o = defaultdict(lambda: [None] * series_count)
             for i, s in enumerate(self.active_series):
                 series_names.append(s.name)
                 for idx, value in s._get_data(min_range, max_range):

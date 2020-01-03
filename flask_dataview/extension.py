@@ -76,6 +76,9 @@ class FlaskDataViews(object):
         app.context_processor(echarts_javascript_context)
         app.context_processor(cdn_tags_context)
 
+        # register
+        app.extensions["dataview"] = self
+
         # add teardown
         app.teardown_appcontext(self.teardown)
 
