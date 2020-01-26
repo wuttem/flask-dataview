@@ -1,0 +1,4 @@
+include flask_dataview/static/*
+include flask_dataview/static/echarts/*
+include flask_dataview/static/echarts/js/*
+include flask_dataview/templates/*

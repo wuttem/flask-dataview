@@ -2,9 +2,11 @@
 
 Dynamic Datatables and Timeseries Charts for Flask.
 
+Warning: This is a very (limited) premature version!
+
 Used Libs:
 - jquery
-- jqueryui
+- bootstrap (for styling)
 - echarts
 - datatables
 
@@ -16,11 +18,14 @@ App:
 #!/usr/bin/python
 # coding: utf8
 
+#!/usr/bin/python
+# coding: utf8
+
 import pendulum
 import random
 
 from flask import Flask, render_template
-from flask_dataview import FlaskDataViews, TimeSeries
+from flask_dataview import FlaskDataViews, RangeTimeSeries, Series
 
 
 e = FlaskDataViews()
@@ -28,13 +33,13 @@ app = Flask(__name__, template_folder=".")
 e.init_app(app)
 
 
-class MySeries(TimeSeries):
+class MySeries(RangeTimeSeries):
     def get_range(self):
         d1 = pendulum.now("utc").subtract(days=300)
         d2 = pendulum.now("utc")
         return (d1, d2)
 
-    def get_data(self, dt_from, dt_to):
+    def get_data_range(self, dt_from, dt_to):
         out = []
         cur = dt_from.replace(microsecond=0)
         while cur < dt_to:
@@ -43,26 +48,25 @@ class MySeries(TimeSeries):
             cur = cur.add(minutes=10)
         return out
 
-
 @app.route('/', methods=['POST', 'GET'])
 def home():
     data = [MySeries("temp"), MySeries("act"), MySeries("ph", active=False)]
-    mychart = e.linechart("My Chart", series=data)
+
+    mychart = e.linechart("myid1", "My Chart", series=data)
     if mychart.is_post_request():
         return mychart.data()
-    return render_template("template.html", chart=linechart)
+    return render_template("template.html", chart=mychart)
 ```
 
 Template HTML
 
 ```html
 {{ jquery_cdn }}
-{{ jquery_ui_cdn }}
-{{ jquery_ui_css_cdn}}
 {{ echarts_cdn }}
+{{ dataview_javascript }}
+{{ bootstrap3_cdn }}
 
-<link href="{{ url_for("echarts.echarts_css") }}" rel="stylesheet" />
-<script src="{{ url_for("echarts.echarts_javascript") }}"></script>
+<h1>Demo Charts</h1>
 
 <div id="mydivid" style="height: 400px;"></div>
 {{ chart.render("mydivid") }}
