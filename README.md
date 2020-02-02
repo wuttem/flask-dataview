@@ -1,6 +1,9 @@
 # flask-dataview
 
-Dynamic Datatables and Timeseries Charts for Flask.
+Dynamic data visualizations for flask.
+This Extension makes it easy to show large data in a flask application.
+At the moment it only supports timeseries data and shows it in a line graph that can be dynamically zoomed and created.
+Performance is really good because only the data that the user has selected is send and rendered.
 
 Warning: This is a very (limited) premature version!
 
@@ -8,7 +11,12 @@ Used Libs:
 - jquery
 - bootstrap (for styling)
 - echarts
-- datatables
+
+## Installation
+
+```bash
+pip install flask-dataview
+```
 
 ## Example Charts
 
@@ -25,7 +33,7 @@ import pendulum
 import random
 
 from flask import Flask, render_template
-from flask_dataview import FlaskDataViews, RangeTimeSeries, Series
+from flask_dataview import FlaskDataViews, RangeTimeSeries
 
 
 e = FlaskDataViews()
@@ -72,8 +80,11 @@ Template HTML
 {{ chart.render("mydivid") }}
 
 ```
+The subclass of `RangeTimeSeries` should implement `get_range` to return the full range of the data (minimum timestamp to maximum timestamp).
+The method `get_data_range` should return the data in the selected timerange in tuples of isoformat timestamps and float values.
 
-## Build / Upload
+
+## Development Build / Upload
 ```
 python setup.py sdist
 twine upload dist/*
