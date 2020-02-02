@@ -1,5 +1,7 @@
 # flask-dataview
 
+[![Build Status](https://travis-ci.org/wuttem/flask-dataview.svg?branch=master)](https://travis-ci.org/wuttem/flask-dataview)
+
 Dynamic data visualizations for flask.
 This Extension makes it easy to show large data in a flask application.
 At the moment it only supports timeseries data and shows it in a line graph that can be dynamically zoomed and created.
