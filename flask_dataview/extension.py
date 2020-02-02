@@ -52,7 +52,10 @@ def cdn_tags_context():
     bootstrap3_css = Markup('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">')
     bootstrap3_js = Markup('<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>')
     bootstrap3 = Markup(bootstrap3_css + "\n" + bootstrap3_js)
-    return {"dataview_javascript": dataview_javascript, "jquery_cdn": jquery, "echarts_cdn": echarts, "bootstrap3_cdn": bootstrap3}
+    bootstrap4_css = Markup('<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">')
+    bootstrap4_js = Markup('<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>')
+    bootstrap4 = Markup(bootstrap4_css + "\n" + bootstrap4_js)
+    return {"dataview_javascript": dataview_javascript, "jquery_cdn": jquery, "echarts_cdn": echarts, "bootstrap3_cdn": bootstrap3, "bootstrap4_cdn": bootstrap4, "bootstrap_cdn": bootstrap4}
 
 
 class FlaskDataViews(object):

@@ -5,6 +5,7 @@ Alpha
 ## v0.2.5
 
 - Fixed utf-8 encoding headers
+- Bootstrap 4 as default
 
 ## v0.2.4
 

@@ -98,8 +98,13 @@ $.widget( "custom.etimeseries", {
       var html = '<div class="modal-dialog" role="document">';
       html += '<div class="modal-content">';
       html += '<div class="modal-header">';
-      html += '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
-      html += '<h4 class="modal-title" id="myModalLabel">Chart Settings</h4>';
+      if ($.fn.modal && parseInt($.fn.modal.Constructor.VERSION.charAt(0)) == 3) {
+        html += '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+        html += '<h4 class="modal-title" id="myModalLabel">Chart Settings</h4>';
+      } else {
+        html += '<h5 class="modal-title" id="myModalLabel">Chart Settings</h4>';
+        html += '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>';
+      }
       html += '</div>';
       html += '<div class="modal-body">';
       html += 'fff';

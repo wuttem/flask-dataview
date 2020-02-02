@@ -71,7 +71,7 @@ Template HTML
 {{ jquery_cdn }}
 {{ echarts_cdn }}
 {{ dataview_javascript }}
-{{ bootstrap3_cdn }}
+{{ bootstrap_cdn }}
 
 <h1>Demo Charts</h1>
 
