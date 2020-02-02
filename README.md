@@ -25,11 +25,8 @@ pip install flask-dataview
 App:
 
 ```python
-#!/usr/bin/python
-# coding: utf8
-
-#!/usr/bin/python
-# coding: utf8
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import pendulum
 import random

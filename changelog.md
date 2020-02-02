@@ -2,6 +2,10 @@
 
 Alpha
 
+## v0.2.5
+
+- Fixed utf-8 encoding headers
+
 ## v0.2.4
 
 - Fixed documentation on pypi

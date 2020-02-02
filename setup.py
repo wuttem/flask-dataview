@@ -1,5 +1,5 @@
-#!/usr/bin/python
-# coding: utf8
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import os
 
@@ -29,11 +29,12 @@ config = {
     'author': 'Matthias Wutte',
     'description': "Flask Data Visualization Helpers",
     'long_description': readme,
+    'long_description_content_type': "text/markdown",
     'url': 'https://github.com/wuttem/flask-dataview',
     "include_package_data": True,
     'download_url': 'https://github.com/wuttem',
     'author_email': 'matthias.wutte@gmail.com',
-    'version': '0.2.4',
+    'version': '0.2.5',
     'install_requires': REQUIRED_PACKAGES,
     'tests_require': TEST_REQS,
     'packages': find_packages(),
