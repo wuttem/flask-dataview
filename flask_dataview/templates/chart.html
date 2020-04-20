@@ -9,7 +9,7 @@ $( document ).ready(function() {
     series_info: {{ chart_instance.get_series_info() | json }}
   });
   {% if not chart_instance.initial_data %}
-  setTimeout($("#{{ div_id }}").etimeseries("reload"), 10);
+  setTimeout(function() { $("#{{ div_id }}").etimeseries("reload") }, 10);
   {% endif %}
 });
 </script>
