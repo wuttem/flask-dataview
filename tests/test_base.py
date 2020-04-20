@@ -47,7 +47,7 @@ class BaseTests(unittest.TestCase):
         e.init_app(app)
         with app.app_context() as ctx:
             data = [MyTestSeries("temp"), MyTestSeries("hum")]
-            chart = e.linechart("myid1", "My Chart", series=data)
+            chart = e.basechart("myid1", "My Chart", series=data)
             with app.test_request_context():
                 self.assertIn("some_div_id", chart.render("some_div_id"))
                 r = chart.data()

@@ -1,6 +1,11 @@
 # flask-dataview changelog
 
-Alpha
+Beta
+
+## v0.3.0
+
+- Added Date Picker
+- Added Color Picker
 
 ## v0.2.5
 

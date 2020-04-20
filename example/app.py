@@ -23,7 +23,10 @@ class MySeries(RangeTimeSeries):
         out = []
         cur = dt_from.replace(microsecond=0)
         while cur < dt_to:
-            val = ((cur.int_timestamp / 3600) % 24) + random.random() * 10
+            if self.name == "temp":
+                val = ((cur.int_timestamp / 3600) % 24) + random.random() * 20
+            else:
+                val = ((cur.int_timestamp / 3600) % 24) + random.random() * 100
             out.append((cur.isoformat(), val))
             cur = cur.add(minutes=10)
         return out
@@ -42,10 +45,10 @@ class MySeries2(TimeSeries):
 @app.route('/', methods=['POST', 'GET'])
 def home():
     data = [MySeries("temp"), MySeries("act"), MySeries("ph", active=False)]
-    data2 = [MySeries2("temp", chart_type="bar"), MySeries2("act")]
+    data2 = [MySeries2("temp", type="bar"), MySeries2("act")]
 
-    mychart = e.linechart("myid1", "My Chart", series=data)
-    mychart2 = e.linechart("chartid2", "My Chart 2", series=data2)
+    mychart = e.basechart("myid1", "My Chart", series=data)
+    mychart2 = e.basechart("chartid2", "My Chart 2", series=data2)
     if mychart.is_post_request():
         return mychart.data()
     if mychart2.is_post_request():
@@ -56,7 +59,16 @@ def home():
 @app.route('/example2', methods=['POST', 'GET'])
 def example2():
     some_series = Series(name="my series", data=[(x, x**2) for x in range(100)])
-    mychart = e.linechart("myid3", "My quad chart", series=[some_series])
+    mychart = e.basechart("myid3", "My quad chart", series=[some_series])
+    if mychart.is_post_request():
+        return mychart.data()
+    return render_template("template.html", chart=mychart)
+
+
+@app.route('/example3', methods=['POST', 'GET'])
+def example3():
+    data = [MySeries("temp", color="#333333", yAxisIndex=1), MySeries("act", yAxisIndex=0), MySeries("ph", active=False)]
+    mychart = e.basechart("myid3", "My quad chart", series=data)
     if mychart.is_post_request():
         return mychart.data()
     return render_template("template.html", chart=mychart)

@@ -59,7 +59,7 @@ class MySeries(RangeTimeSeries):
 def home():
     data = [MySeries("temp"), MySeries("act"), MySeries("ph", active=False)]
 
-    mychart = e.linechart("myid1", "My Chart", series=data)
+    mychart = e.basechart("myid1", "My Chart", series=data)
     if mychart.is_post_request():
         return mychart.data()
     return render_template("template.html", chart=mychart)

@@ -3,12 +3,17 @@
 
 import pendulum
 import uuid
+import logging
 
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from flask import request, jsonify, current_app
 
 from .helper import render_chart, update_mapping
+
+
+logger = logging.getLogger("flask-dataview")
+
 
 class BaseChart(object):
     BASE_TOOLBOX = {
@@ -40,9 +45,14 @@ class BaseChart(object):
 
     def __init__(self, id, title="", series=None, min_days=1, default_days=7,
                  max_days=30, context=None, initial_data=True, theme=None,
-                 max_active_series=5, **kwargs):
+                 max_active_series=None, **kwargs):
         self._id = "{}.{}".format(self.__class__.__name__, id)
-        self.dataset = DataSet(data=series, max_active_series=max_active_series)
+        if series and isinstance(series, DataSet):
+            self.dataset = series
+        else:
+            self.dataset = DataSet(data=series)
+        if max_active_series is not None:
+            self.dataset.max_active_series = max_active_series
         self.title = title
         self._theme = theme
         self.render_function = render_chart
@@ -75,6 +85,9 @@ class BaseChart(object):
                 return True
         return False
 
+    def set_series_option(self, series_name, k, v):
+        self.dataset.set_series_option(series_name, k, v)
+
     def enable_series(self, series_name):
         self.dataset.enable_series(series_name)
 
@@ -85,10 +98,16 @@ class BaseChart(object):
         self.context.update(data)
         if "series" in data:
             for series_name in data["series"]:
+                # Active
                 if data["series"][series_name]["active"]:
                     self.enable_series(series_name)
                 else:
                     self.disable_series(series_name)
+                # other options
+                for k, v in data["series"][series_name].items():
+                    if k in ("active", "name"):
+                        continue
+                    self.set_series_option(series_name, k, v)
 
     def get_context_value(self, name, default=None):
         if name in self.context:
@@ -116,8 +135,11 @@ class BaseChart(object):
             return True
         return False
 
+    def get_series(self, select="all"):
+        return self.dataset.get_series(select)
+
     def get_series_info(self):
-        return self.dataset.get_series_info("all")
+        return {n: ser.to_options() for n, ser in self.get_series("all").items()}
 
     def default_zoom_range(self):
         return self._default_days * 24 * 60 * 60 * 1000
@@ -154,15 +176,16 @@ class BaseChart(object):
 
     def get_chart_series(self):
         out = []
-        for series_name, ser in self.dataset.get_series_info("active").items():
-            out.append({
-                "name": ser["name"],
-                "type": ser.get("chart_type", "line"),
+        for series_name, ser in self.dataset.get_series("active").items():
+            d = {
+                "name": ser.name,
+                "type": "line",
                 "smooth": False,
-                #"areaStyle": {"color": "#ddd"},
                 "showSymbol": False,
-                "encode": {"x": 'idx', "y": ser["name"]}
-            })
+                "encode": {"x": 'idx', "y": ser.name}
+            }
+            d.update(ser.to_options())
+            out.append(d)
         return out
 
     def get_current_range(self):
@@ -207,6 +230,9 @@ class BaseChart(object):
             d = self.dataset.get_data()
         return d
 
+    def build_yaxis(self):
+        return [{"type": "value", "position": "left"}, {"type": "value", "position": "right"}]
+
     def build_options(self, with_data=True):
         base_opt = self.get_value("base_options")
         opt = {}
@@ -217,7 +243,7 @@ class BaseChart(object):
             },
             "dataset": self.get_dataset() if with_data else None,
             "toolbox": self.get_value("base_toolbox"),
-            "yAxis": {"type": "value"},
+            "yAxis": self.build_yaxis(),
             "series": self.get_chart_series()
         }
 
@@ -309,6 +335,12 @@ class DataSet():
                 s.active = True
                 self.mark_dirty()
 
+    def set_series_option(self, series_name, k, v):
+        for s in self.series:
+            if s.name == series_name:
+                s._set_option(k,v)
+                self.mark_dirty()
+
     def disable_series(self, series_name):
         for s in self.series:
             if s.name == series_name:
@@ -336,17 +368,14 @@ class DataSet():
             self._range_limit_cache = dict(min=d1, max=d2)
         return self._range_limit_cache
 
-    def get_series_info(self, select="all"):
-        out = {}
+    def get_series(self, select="all"):
         if select == "all":
             it = self.series
         elif select == "active":
             it = self.active_series
         else:
             raise ValueError("invalid series select")
-        for s in it:
-            out[s.name] = {"name": s.name, "active": s.active, "chart_type": s.chart_type}
-        return out
+        return {s.name: s for s in it}
 
     def get_data(self, min_range=None, max_range=None):
         if self._data_cache is None:
@@ -367,12 +396,30 @@ class DataSet():
 
 
 class Series(metaclass=ABCMeta):
-    def __init__(self, name, active=True, data=None, chart_type="line"):
-        self.chart_type = chart_type
+    OPTIONS = {
+        "type": "line",
+        "color": None,
+        "smooth": None,
+        "areaStyle": None,
+        "showSymbol":None,
+        "yAxisIndex": 0
+    }
+
+    def __init__(self, name, active=True, data=None, **kwargs):
         self.name = name
         self.active = active
+        self.opt = {}
         if data is not None:
             self._static_data = self.data_from_list(data)
+        for k, val in kwargs.items():
+            
+            self._set_option(k, val)
+
+    def _set_option(self, k, v):
+        if k in self.OPTIONS.keys():
+            self.opt[k] = v
+        else:
+            logger.warning("trying to set invalid series option: {}".format(k))
 
     def _get_range(self):
         if hasattr(self, "_static_range"):
@@ -399,6 +446,14 @@ class Series(metaclass=ABCMeta):
         d = []
         for t in data_list:
             d.append(tuple(t))
+        return d
+
+    def to_options(self):
+        d = {"name": self.name, "active": self.active}
+        for opt_name, default_value in self.OPTIONS.items():
+            val = self.opt.get(opt_name, default_value)
+            if val is not None:
+                d[opt_name] = val
         return d
 
 

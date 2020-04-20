@@ -1,14 +1,3 @@
-function uniqId() {
-    return Math.round(new Date().getTime() + (Math.random() * 100));
-}
-
-function timeAsUTCDate(dt) {
-  var d = new Date(dt)
-  var utc_ts = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(),
-                        d.getMinutes(), d.getSeconds(), d.getMilliseconds())
-  return utc_ts;
-}
-
 $.widget( "custom.etimeseries", {
     options: {
         theme: "default",
@@ -21,7 +10,8 @@ $.widget( "custom.etimeseries", {
         chart: null,
         dialog: null,
         is_range_chart: false,
-        id: "unknown"
+        id: "unknown",
+        enable_datepicker: true
     },
 
     _adjust_options: function(options) {
@@ -37,24 +27,64 @@ $.widget( "custom.etimeseries", {
       var body = this.options.dialog.find('.modal-body')
       body.empty();
       var content = jQuery('<div/>');
+
+      if (this.options.enable_datepicker && this.options.is_range_chart) {
+        var limits = this.options.max_range;
+        var range_start = this.format_utc_ts(this.options.data_range[0]);
+        var range_end = this.format_utc_ts(this.options.data_range[1]);
+
+        // Datepicker
+        var dates = jQuery('<div/>', {class: "input-group input-daterange"});
+        var min_date = jQuery('<input/>', {class: "form-control date_range", id: "date_range_min", value: range_start});
+        min_date.data("before", range_start);
+        var max_date = jQuery('<input/>', {class: "form-control date_range", id: "date_range_max", value: range_end});
+        max_date.data("before", range_end);
+        dates.datepicker({
+          inputs: [min_date, max_date],
+          todayHighlight: true,
+          format: "yyyy-mm-dd",
+          startDate: new Date(limits[0]),
+          endDate: new Date(limits[1])
+        });
+        dates.append(min_date);
+        dates.append(jQuery('<div/>', {class: "input-group-text", text: "to"}));
+        dates.append(max_date);
+        content.append(dates);
+      }
+
+      // Series Options
       var tab = jQuery('<table/>').addClass('table table-striped');
       var head = jQuery('<tr/>');
       head.append(jQuery('<th/>', {"text": "Show", "style": "width: 50px;"}));
       head.append(jQuery('<th/>', {"text": "Series"}));
-      // head.append(jQuery('<th/>', {"text": "Color"}));
+      head.append(jQuery('<th/>', {"text": "Color"}));
+      head.append(jQuery('<th/>', {"text": "Second Axis"}));
       tab.append(jQuery('<thead/>').append(head));
+      // console.log(this.options.series_info);
       $.each(this.options.series_info, function( key, value ) {
         var tr = jQuery('<tr/>');
-        var td = jQuery('<td/>');
-        var cb = jQuery('<input/>', {type: "checkbox", id: "cb_" + key, checked: value.active});
-        cb.data("key", key);
-        td.append(cb);
-        tr.append(td);
+        // active
+        var act = jQuery('<input/>', {class: "series_active", type: "checkbox", id: "active_" + key, checked: value.active});
+        act.data("key", key);
+        tr.append(jQuery('<td/>').append(act));
         tr.append("<td>" + key + "</td>");
-        // var color = jQuery('<input/>')[0];
-        // var picker = new jscolor(color)
-        // picker.fromHSV(360 / 100 * 10, 100, 100)
-        // tr.append(jQuery('<td/>').append(color));
+        // color
+        var color = jQuery('<input/>', {class: "series_color"});
+        color.data("key", key);
+        var picker = new jscolor(color[0], {required: false});
+        if (value["color"]) {
+          picker.fromString(value["color"]);
+        }
+        tr.append(jQuery('<td/>').append(color));
+        // axis
+        var is_act = false;
+        if (value["yAxisIndex"]) {
+          is_act = true;
+        }
+        var axis = jQuery('<input/>', {class: "series_axis", type: "checkbox", id: "axis_" + key, checked: is_act});
+        axis.data("key", key);
+        tr.append(jQuery('<td/>').append(axis));
+
         tab.append(jQuery('<thead/>').append(tr));
       });
       content.append(tab);
@@ -67,7 +97,30 @@ $.widget( "custom.etimeseries", {
       var changed = false;
       var s = this.options.series_info;
       var r = this.options.data_range;
-      d.find("input[type=checkbox]").each(function( index ) {
+      // Colors
+      d.find("input[class=series_color]").each(function( index ) {
+        var k = $( this ).data("key");
+        var v = $( this )[0].value;
+        if (v) {
+          v = "#" + v;
+          if (s[k]["color"] != v) {
+            changed = true;
+            s[k].color = v;
+          }
+        }
+      }); 
+      // Axis
+      d.find("input[class=series_axis]").each(function( index ) {
+        var k = $( this ).data("key");
+        var v = $( this )[0].checked ? 1 : 0;
+        if (s[k]["yAxisIndex"] != v)
+        {
+          changed = true;
+          s[k].yAxisIndex = v;
+        }
+      });
+      // Active
+      d.find("input[class=series_active]").each(function( index ) {
         var k = $( this ).data("key");
         var v = $( this )[0].checked;
         if (s[k].active != v)
@@ -77,6 +130,21 @@ $.widget( "custom.etimeseries", {
         }
         console.log(s[k]);
       });
+
+      // Dates
+      if (this.options.enable_datepicker && this.options.is_range_chart) {
+        var min_before = $("#date_range_min").data("before");
+        var max_before = $("#date_range_max").data("before");
+        var min_current = $("#date_range_min").val();
+        var max_current = $("#date_range_max").val();
+        if (min_current != min_before || max_current != max_before) {
+          r[0] = this.from_date_format(min_current);
+          r[1] = this.from_date_format(max_current, true);
+          console.log("date change", r[0], r[1]);
+          changed = true;
+        }
+      }
+
       if (changed) {
         setTimeout(this.load_data.bind(this, r[0], r[1], true), 10);
       }
@@ -89,7 +157,7 @@ $.widget( "custom.etimeseries", {
     },
 
     _create_dialog: function() {
-      var dialog_id = uniqId();
+      var dialog_id = this.uniqId();
       var dialog = jQuery('<div/>', {
         "id": dialog_id,
         "class": 'modal fade echarts-dialog',
@@ -138,7 +206,7 @@ $.widget( "custom.etimeseries", {
 
         var height = this.element.height();
         var chart_div = jQuery('<div/>', {
-            "id": uniqId(),
+            "id": this.uniqId(),
             "class": 'etimeseries-chart',
             "style": "width: 100%;"});
         chart_div.height(height);
@@ -221,7 +289,7 @@ $.widget( "custom.etimeseries", {
       var req_data = {from_date: f_iso, to_date: t_iso, action: "data",
                       chart_id: this.options.id, series: this.options.series_info,
                       "reload": reload};
-      console.log("get_data", req_url);
+      console.log("get_data", req_url, req_data);
 
       var self = this;
       $.ajax({
@@ -247,5 +315,36 @@ $.widget( "custom.etimeseries", {
             alert(errMsg);
         }
       });
+    },
+
+    format_date: function(ts) {
+      var d = new Date(ts);
+      return d.toISOString().substring(0, 10);
+    },
+
+    from_date_format: function(fmt, end_of_day) {
+      // fmt iso yyyy-mm-dd
+      end_of_day = typeof end_of_day !== 'undefined' ? end_of_day : false;
+      var utc_ts = Date.parse(fmt);
+      if (end_of_day) {
+        utc_ts = utc_ts + (24 * 60 * 60 * 1000) - 1;
+      }
+      return utc_ts;
+    },
+
+    format_utc_ts: function(ts) {
+      var d = new Date(this.timeAsUTCDate(ts));
+      return d.toISOString().substring(0, 10);
+    },
+
+    timeAsUTCDate: function(dt) {
+      var d = new Date(dt)
+      var utc_ts = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(),
+                            d.getMinutes(), d.getSeconds(), d.getMilliseconds())
+      return utc_ts;
+    },
+
+    uniqId: function() {
+      return Math.round(new Date().getTime() + (Math.random() * 100));
     }
 });

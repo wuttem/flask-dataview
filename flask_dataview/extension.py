@@ -49,13 +49,16 @@ def cdn_tags_context():
     jquery_ui_css = Markup('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.min.css" integrity="sha256-sEGfrwMkIjbgTBwGLVK38BG/XwIiNC/EAG9Rzsfda6A=" crossorigin="anonymous" />')
     echarts = Markup('<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/4.3.0/echarts-en.min.js" integrity="sha256-0BLhrT+xIfvJO+8OfHf8iWMDzUmoL+lXNyswCl7ZUlY=" crossorigin="anonymous"></script>')
     dataview_javascript = Markup("<script src='{}'></script>".format(url_for("_dataview.dataview_javascript")))
+    bootstrap_datepicker_js = Markup('<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js" integrity="sha256-bqVeqGdJ7h/lYPq6xrPv/YGzMEb6dNxlfiTUHSgRCp8=" crossorigin="anonymous"></script>')
+    bootstrap_datepicker_css = Markup('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker3.min.css" integrity="sha256-FAOaXTpl90/K8cXmSdsskbQN3nKYulhCpPbcFzGTWKI=" crossorigin="anonymous" />')
     bootstrap3_css = Markup('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">')
     bootstrap3_js = Markup('<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>')
-    bootstrap3 = Markup(bootstrap3_css + "\n" + bootstrap3_js)
+    bootstrap3 = Markup(bootstrap3_css + "\n" + bootstrap3_js + "\n" + bootstrap_datepicker_css + "\n" + bootstrap_datepicker_js)
     bootstrap4_css = Markup('<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">')
     bootstrap4_js = Markup('<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>')
-    bootstrap4 = Markup(bootstrap4_css + "\n" + bootstrap4_js)
-    return {"dataview_javascript": dataview_javascript, "jquery_cdn": jquery, "echarts_cdn": echarts, "bootstrap3_cdn": bootstrap3, "bootstrap4_cdn": bootstrap4, "bootstrap_cdn": bootstrap4}
+    bootstrap4 = Markup(bootstrap4_css + "\n" + bootstrap4_js + "\n" + bootstrap_datepicker_css + "\n" + bootstrap_datepicker_js)
+    bootstrap_datepicker = bootstrap_datepicker_css + "\n" + bootstrap_datepicker_js
+    return {"dataview_javascript": dataview_javascript, "jquery_cdn": jquery, "echarts_cdn": echarts, "bootstrap3_cdn": bootstrap3, "bootstrap4_cdn": bootstrap4, "bootstrap_cdn": bootstrap4, "bootstrap_datepicker": bootstrap_datepicker}
 
 
 class FlaskDataViews(object):
@@ -93,6 +96,12 @@ class FlaskDataViews(object):
         if "theme" not in kwargs:
             return BaseChart(*args, theme=self.theme, **kwargs)
         return BaseChart(*args, **kwargs)
+
+    def basechart(self, *args, **kwargs):
+        if "theme" not in kwargs:
+            return BaseChart(*args, theme=self.theme, **kwargs)
+        return BaseChart(*args, **kwargs)
+
 
 @view_bp.route('/echarts.min.js')
 def echarts_lib_min():

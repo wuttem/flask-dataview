@@ -34,7 +34,7 @@ config = {
     "include_package_data": True,
     'download_url': 'https://github.com/wuttem',
     'author_email': 'matthias.wutte@gmail.com',
-    'version': '0.2.5',
+    'version': '0.3.0',
     'install_requires': REQUIRED_PACKAGES,
     'tests_require': TEST_REQS,
     'packages': find_packages(),
