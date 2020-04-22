@@ -34,10 +34,10 @@ $.widget( "custom.etimeseries", {
         var range_end = this.format_utc_ts(this.options.data_range[1]);
 
         // Datepicker
-        var dates = jQuery('<div/>', {class: "input-group input-daterange"});
-        var min_date = jQuery('<input/>', {class: "form-control date_range", id: "date_range_min", value: range_start});
+        var dates = jQuery('<div/>', {class: "form-group row"});
+        var min_date = jQuery('<input/>', {class: "form-control", id: "date_range_min", value: range_start});
         min_date.data("before", range_start);
-        var max_date = jQuery('<input/>', {class: "form-control date_range", id: "date_range_max", value: range_end});
+        var max_date = jQuery('<input/>', {class: "form-control", id: "date_range_max", value: range_end});
         max_date.data("before", range_end);
         dates.datepicker({
           inputs: [min_date, max_date],
@@ -46,9 +46,8 @@ $.widget( "custom.etimeseries", {
           startDate: new Date(limits[0]),
           endDate: new Date(limits[1])
         });
-        dates.append(min_date);
-        dates.append(jQuery('<div/>', {class: "input-group-text", text: "to"}));
-        dates.append(max_date);
+        dates.append(jQuery('<div/>', {class: "col-md-6"}).append(min_date));
+        dates.append(jQuery('<div/>', {class: "col-md-6"}).append(max_date));
         content.append(dates);
       }
 
@@ -58,7 +57,7 @@ $.widget( "custom.etimeseries", {
       head.append(jQuery('<th/>', {"text": "Show", "style": "width: 50px;"}));
       head.append(jQuery('<th/>', {"text": "Series"}));
       head.append(jQuery('<th/>', {"text": "Color"}));
-      head.append(jQuery('<th/>', {"text": "Second Axis"}));
+      head.append(jQuery('<th/>', {"text": "Y Axis"}));
       tab.append(jQuery('<thead/>').append(head));
       // console.log(this.options.series_info);
       $.each(this.options.series_info, function( key, value ) {
@@ -81,9 +80,10 @@ $.widget( "custom.etimeseries", {
         if (value["yAxisIndex"]) {
           is_act = true;
         }
-        var axis = jQuery('<input/>', {class: "series_axis", type: "checkbox", id: "axis_" + key, checked: is_act});
+        var axis = jQuery('<input/>', {class: "form-check-input series_axis", type: "checkbox", id: "axis_" + key, checked: is_act});
+        var axis_label = jQuery('<label/>', {class: "form-check-label", for: "axis_" + key, text: "right"});
         axis.data("key", key);
-        tr.append(jQuery('<td/>').append(axis));
+        tr.append(jQuery('<td/>').append(axis).append(axis_label));
 
         tab.append(jQuery('<thead/>').append(tr));
       });
@@ -98,7 +98,7 @@ $.widget( "custom.etimeseries", {
       var s = this.options.series_info;
       var r = this.options.data_range;
       // Colors
-      d.find("input[class=series_color]").each(function( index ) {
+      d.find("input[class*='series_color']").each(function( index ) {
         var k = $( this ).data("key");
         var v = $( this )[0].value;
         if (v) {
@@ -110,7 +110,7 @@ $.widget( "custom.etimeseries", {
         }
       }); 
       // Axis
-      d.find("input[class=series_axis]").each(function( index ) {
+      d.find("input[class*='series_axis']").each(function( index ) {
         var k = $( this ).data("key");
         var v = $( this )[0].checked ? 1 : 0;
         if (s[k]["yAxisIndex"] != v)
@@ -120,7 +120,7 @@ $.widget( "custom.etimeseries", {
         }
       });
       // Active
-      d.find("input[class=series_active]").each(function( index ) {
+      d.find("input[class*='series_active']").each(function( index ) {
         var k = $( this ).data("key");
         var v = $( this )[0].checked;
         if (s[k].active != v)
