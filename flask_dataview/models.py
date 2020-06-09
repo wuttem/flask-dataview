@@ -43,7 +43,7 @@ class BaseChart(object):
         }
     }
 
-    def __init__(self, id, title="", series=None, min_days=1, default_days=7,
+    def __init__(self, id, title="", series=None, min_days=0, default_days=7,
                  max_days=30, context=None, initial_data=True, theme=None,
                  max_active_series=None, **kwargs):
         self._id = "{}.{}".format(self.__class__.__name__, id)
@@ -231,7 +231,9 @@ class BaseChart(object):
         return d
 
     def build_yaxis(self):
-        return [{"type": "value", "position": "left"}, {"type": "value", "position": "right"}]
+        return [{"type": "value", "position": "left"},
+                {"type": "value", "position": "right", "splitLine": {"show": False}}
+               ]
 
     def build_options(self, with_data=True):
         base_opt = self.get_value("base_options")
@@ -264,6 +266,14 @@ class BaseChart(object):
                 "endValue": r["max"].int_timestamp*1000,
                 "minValueSpan": self.min_zoom_range(),
                 "maxValueSpan": self.max_zoom_range(),
+            },
+            {
+                "type": "inside",
+                "realtime": True,
+                "filterMode": "empty",
+                "showDataShadow": False,
+                "startValue": r["min"].int_timestamp*1000,
+                "endValue": r["max"].int_timestamp*1000,
             }]
             build["grid"] = {"bottom": 80}
         update_mapping(opt, build)
@@ -412,7 +422,7 @@ class Series(metaclass=ABCMeta):
         if data is not None:
             self._static_data = self.data_from_list(data)
         for k, val in kwargs.items():
-            
+
             self._set_option(k, val)
 
     def _set_option(self, k, v):
