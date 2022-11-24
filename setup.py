@@ -18,6 +18,7 @@ TEST_REQS = [
 
 
 REQUIRED_PACKAGES = [
+    'Jinja2>=3.0',
     'flask',
     'werkzeug',
     'pendulum'
@@ -34,7 +35,7 @@ config = {
     "include_package_data": True,
     'download_url': 'https://github.com/wuttem',
     'author_email': 'matthias.wutte@gmail.com',
-    'version': '0.3.2',
+    'version': '0.3.3',
     'install_requires': REQUIRED_PACKAGES,
     'tests_require': TEST_REQS,
     'packages': find_packages(),

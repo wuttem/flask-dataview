@@ -107,6 +107,11 @@ $.widget( "custom.etimeseries", {
             changed = true;
             s[k].color = v;
           }
+        } else {
+          if (s[k].color) {
+            delete s[k].color;
+            changed = true;
+          }
         }
       }); 
       // Axis
@@ -247,9 +252,15 @@ $.widget( "custom.etimeseries", {
 
     _handle_zoom: function (params) {
       var chart = this.options.chart;
+      var opt = chart.getModel().option;
       var axis = chart.getModel().option.xAxis[0];
-      var d1 = new Date(axis.rangeStart);
-      var d2 = new Date(axis.rangeEnd);
+
+      // Pre Echarts 5
+      //var d1 = new Date(axis.rangeStart);
+      //var d2 = new Date(axis.rangeEnd);
+
+      var d1 = new Date(opt.dataZoom[0].startValue);
+      var d2 = new Date(opt.dataZoom[0].endValue);
 
       // check if we are in max_range
       if (d1 < this.options.max_range[0]) {
